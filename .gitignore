@@ -1,0 +1,24 @@
+# Python Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Workspace Folder (contains agent execution files, logs, and outputs)
+workspace/
+
+# Environment Configurations & API Keys
+.env
+.env.*
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# IDE Settings
+.vscode/
+.idea/

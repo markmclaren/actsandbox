@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActSandbox - Local Manus-like CodeAct Sandbox</title>
+    <!-- Google Typography Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Code Syntax Pretty-Printing -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    
+    <div class="app-container">
+        <!-- Top Navigation Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-glow"></div>
+                <i class="fa-solid fa-terminal logo-icon"></i>
+                <div class="title-meta">
+                    <h1>ActSandbox</h1>
+                    <span class="badge neon-cyan">v1.0.0 (Local Manus-like)</span>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="status-indicator-dot pulsing-green"></span>
+                <span id="connection-status">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace Dashboard Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- COLUMN 1: CONTROLS & WORKSPACE FILE TREE -->
+            <section class="panel glassmorphic-panel scrollable-panel" id="control-panel">
+                <div class="panel-header">
+                    <i class="fa-solid fa-sliders"></i>
+                    <h2>Control Console</h2>
+                </div>
+                
+                <!-- Settings Form -->
+                <div class="config-section">
+                    <div class="form-group">
+                        <label for="provider-select"><i class="fa-solid fa-robot"></i> LLM Provider</label>
+                        <select id="provider-select">
+                            <option value="local">Local Docker LLM (Ollama, vLLM, etc.)</option>
+                            <option value="gemini">Gemini API (Google)</option>
+                            <option value="openai">OpenAI API</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="url-group">
+                        <label for="base-url-input"><i class="fa-solid fa-link"></i> Endpoint API URL</label>
+                        <input type="text" id="base-url-input" placeholder="http://localhost:12434/engines/v1/chat/completions" value="http://localhost:12434/engines/v1/chat/completions">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="model-input"><i class="fa-solid fa-tag"></i> Model Tag / Name</label>
+                        <input type="text" id="model-input" list="model-options" placeholder="docker.io/gemma4:latest" value="docker.io/gemma4:latest">
+                        <datalist id="model-options">
+                            <!-- Recommended Local Models (16GB RAM Friendly) -->
+                            <option value="docker.io/gemma4:latest">docker.io/gemma4:latest (Default Local Gemma 4)</option>
+                            <option value="docker.io/mistral:latest">docker.io/mistral:latest (Mistral 7B - Fast & Reliable)</option>
+                            <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (Qwen 2.5 Coder - Best Local Programming Model)</option>
+                            <option value="llama3:8b">llama3:8b (Llama 3 8B - Meta General Reasoning)</option>
+                            <!-- Cloud Models -->
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (Gemini 2.5 - Ultra-fast Cloud)</option>
+                            <option value="gpt-4o">gpt-4o (OpenAI - Advanced Cloud Reasoning)</option>
+                        </datalist>
+                        <small class="form-note" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                            <i class="fa-solid fa-microchip" style="color: var(--accent-cyan); margin-right: 2px;"></i>
+                            <strong>16GB RAM Recommendation:</strong> Stick to models between 7B and 9B parameters (like <code>qwen2.5-coder:7b</code> or <code>mistral:latest</code>). They fit comfortably in 4GB-6GB VRAM, preventing disk-paging lags!
+                        </small>
+                    </div>
+
+                    <div class="form-group" id="api-key-group">
+                        <label for="api-key-input"><i class="fa-solid fa-key"></i> Provider API Key</label>
+                        <input type="password" id="api-key-input" placeholder="Optional for local hosts">
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="form-group">
+                        <label for="sandbox-select"><i class="fa-solid fa-box"></i> Execution Sandbox</label>
+                        <select id="sandbox-select">
+                            <option value="docker">Docker Container (Local WSL2 MicroVM)</option>
+                            <option value="e2b">E2B Sandbox (Cloud Firecracker MicroVM)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="docker-image-group">
+                        <label for="docker-image-input"><i class="fa-solid fa-compact-disc"></i> Docker Image Tag</label>
+                        <select id="docker-image-input">
+                            <option value="python:3.11-slim">python:3.11-slim (Lightweight Python - Default)</option>
+                            <option value="mcr.microsoft.com/playwright/python:v1.40.0-jammy">mcr.microsoft.com/playwright/python:v1.40.0-jammy (Playwright Browser Sandbox)</option>
+                        </select>
+                        <small class="form-note" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                            <i class="fa-solid fa-circle-info" style="color: var(--accent-cyan); margin-right: 2px;"></i> 
+                            <strong>Playwright Advantage:</strong> Installs a headless Chromium browser, enabling the agent to scrape complex React sites, capture screenshots, and bypass basic bot blocks.
+                        </small>
+                    </div>
+
+                    <div class="form-group id-e2b-group hidden" id="e2b-key-group">
+                        <label for="e2b-key-input"><i class="fa-solid fa-cloud-key"></i> E2B API Key</label>
+                        <input type="password" id="e2b-key-input" placeholder="e2b_...">
+                    </div>
+
+                    <div class="form-group row-group">
+                        <label class="switch-label" for="hitl-toggle">
+                            <i class="fa-solid fa-user-shield"></i> Require Command Approval (HITL)
+                        </label>
+                        <label class="switch">
+                            <input type="checkbox" id="hitl-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <button id="save-config-btn" class="btn secondary-btn">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Configuration
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Live Workspace Explorer -->
+                <div class="workspace-section">
+                    <div class="workspace-header">
+                        <h3><i class="fa-solid fa-folder-open"></i> Local Workspace</h3>
+                        <button id="refresh-files-btn" title="Refresh file list"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div id="file-explorer-tree" class="file-tree">
+                        <!-- Populated by JS -->
+                        <div class="empty-state">No files generated yet.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 2: THE CODEACT AGENT PIPELINE TIMELINE -->
+            <section class="panel glassmorphic-panel scrollable-panel" id="timeline-panel">
+                <div class="panel-header">
+                    <i class="fa-solid fa-brain"></i>
+                    <h2>Agent Pipeline</h2>
+                    <span id="step-counter" class="badge hidden">Step 1</span>
+                </div>
+                
+                <!-- Main Task Prompt input -->
+                <div class="task-input-section">
+                    <textarea id="task-prompt-input" rows="3" placeholder="Enter a task (e.g. 'Create a script that lists system files, parses sizes, outputs a pretty markdown table, and writes it to disk.')"></textarea>
+                    <div class="task-actions">
+                        <button id="start-task-btn" class="btn primary-btn">
+                            <i class="fa-solid fa-play"></i> Initiate Agent
+                        </button>
+                        <button id="stop-task-btn" class="btn danger-btn hidden">
+                            <i class="fa-solid fa-circle-stop"></i> Terminate Run
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Agent Status Banner -->
+                <div id="agent-status-banner" class="status-banner hidden">
+                    <span class="status-text">Idle</span>
+                    <span class="spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                </div>
+
+                <!-- Timeline Container -->
+                <div id="timeline-stream" class="timeline-container">
+                    <div class="empty-timeline-state">
+                        <i class="fa-solid fa-diagram-project timeline-icon"></i>
+                        <p>Waiting for a task initiation...</p>
+                        <span class="hint-text">Configure your LLM, enter a prompt above, and watch the CodeAct loop run isolated actions!</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 3: TERMINAL & CODE VIEWER -->
+            <section class="panel glassmorphic-panel flex-panel" id="output-panel">
+                <!-- Tab Headers -->
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="terminal-tab">
+                        <i class="fa-solid fa-terminal"></i> Terminal Logs
+                    </button>
+                    <button class="tab-btn" data-tab="preview-tab">
+                        <i class="fa-solid fa-file-code"></i> Workspace Previewer
+                    </button>
+                </div>
+
+                <div class="tab-content-container">
+                    <!-- Tab 1: Retro-Futuristic Terminal -->
+                    <div class="tab-content active" id="terminal-tab">
+                        <div class="terminal-window">
+                            <div class="terminal-header">
+                                <div class="terminal-dots">
+                                    <span class="dot red"></span>
+                                    <span class="dot yellow"></span>
+                                    <span class="dot green"></span>
+                                </div>
+                                <span class="terminal-title">bash - act-sandbox-container</span>
+                                <button id="clear-terminal-btn" title="Clear console"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                            <div id="terminal-logs" class="terminal-body">
+                                <div class="terminal-line system-msg">ActSandbox Terminal v1.0 initialized.</div>
+                                <div class="terminal-line system-msg">Ready for executions...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Code Viewer / Image Renderer -->
+                    <div class="tab-content" id="preview-tab">
+                        <div class="preview-card">
+                            <div class="preview-header">
+                                <span id="preview-filename"><i class="fa-solid fa-file"></i> Select a file in the workspace</span>
+                                <span id="preview-filesize" class="badge">0 bytes</span>
+                            </div>
+                            <div class="preview-body">
+                                <pre id="preview-code-block" class="hidden"><code><!-- Code goes here --></code></pre>
+                                <div id="preview-markdown-block" class="hidden markdown-body" style="overflow-y: auto; flex-grow: 1; padding: 12px 16px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.03); max-height: 400px; font-size: 13.5px; line-height: 1.6; color: #e2e8f0;"></div>
+                                <div id="preview-image-container" class="hidden">
+                                    <img id="preview-image" src="" alt="Artifact image">
+                                </div>
+                                <div id="preview-empty-state" class="preview-placeholder">
+                                    <i class="fa-solid fa-code preview-icon"></i>
+                                    <p>Select any file from the workspace folder on the left to preview its content here.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Human-in-the-Loop Dialog (Glassmorphic Modal Overlay) -->
+    <div id="hitl-modal" class="modal-overlay hidden">
+        <div class="modal-card glassmorphic-modal">
+            <div class="modal-header">
+                <i class="fa-solid fa-user-shield modal-icon glow-violet"></i>
+                <div>
+                    <h2>Human Approval Required</h2>
+                    <p class="modal-meta">The agent wants to execute a terminal action.</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="command-box">
+                    <div class="command-box-header">
+                        <span>Proposed Command:</span>
+                        <span class="badge neon-violet">Step <span id="hitl-step-number">1</span></span>
+                    </div>
+                    <textarea id="hitl-command-textarea" spellcheck="false"></textarea>
+                </div>
+
+                <div class="rejection-reason-box hidden" id="rejection-reason-container">
+                    <label for="rejection-reason-input"><i class="fa-solid fa-comment-slash"></i> Reason for Rejection:</label>
+                    <input type="text" id="rejection-reason-input" placeholder="Explain why you are rejecting (e.g. 'risky package', 'incorrect path')">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="hitl-reject-btn" class="btn danger-btn-outline">
+                    <i class="fa-solid fa-xmark"></i> Reject Action
+                </button>
+                <button id="hitl-edit-btn" class="btn secondary-btn">
+                    <i class="fa-solid fa-pen-to-square"></i> Modify Command
+                </button>
+                <button id="hitl-approve-btn" class="btn success-btn">
+                    <i class="fa-solid fa-check"></i> Approve & Execute
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Robust Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Robust Syntax Highlight / Pretty Printing Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+
+    <script src="app.js"></script>
+</body>
+</html>
