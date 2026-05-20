@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedFilePath = null;
     let rejectionMode = false;
     let hitlStep = 1;
+    let originalModelValue = '';
 
     // Initialize Page
     init();
@@ -79,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Focus Clear-Filter Trick: Clear value temporarily on focus so browser displays all options
-        let originalModelValue = '';
         modelInput.addEventListener('focus', () => {
             originalModelValue = modelInput.value;
             modelInput.value = ''; 
@@ -399,11 +399,17 @@ document.addEventListener('DOMContentLoaded', () => {
         stopTaskBtn.classList.remove('hidden');
         taskPromptInput.disabled = true;
         
+        let modelVal = modelInput.value.trim();
+        if (!modelVal && originalModelValue) {
+            modelVal = originalModelValue;
+            modelInput.value = originalModelValue;
+        }
+
         // Gather current config values dynamically from UI inputs
         const liveConfig = {
             provider: providerSelect.value,
             base_url: baseUrlInput.value,
-            model: modelInput.value,
+            model: modelVal || currentConfig?.model || "docker.io/gemma4:latest",
             api_key: apiKeyInput.value,
             sandbox_type: sandboxSelect.value,
             docker_image: dockerImageInput.value,

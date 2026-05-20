@@ -268,10 +268,10 @@ class CodeActAgent:
                 }
 
             # 3. Run command in Sandbox
-            # We run it in a separate thread/executor if blocking, but our sandboxes are fast
+            # We run it in a separate thread/executor to prevent blocking the asyncio event loop.
             # For safety, let's wrap execution in a try-except
             try:
-                exit_code, output = sandbox.execute(final_command)
+                exit_code, output = await asyncio.to_thread(sandbox.execute, final_command)
             except Exception as e:
                 exit_code = -1
                 output = f"Execution failed: {str(e)}"

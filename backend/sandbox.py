@@ -120,12 +120,34 @@ class DockerSandbox(BaseSandbox):
         print(f"[DockerSandbox] Finished with code {exit_code}")
         return exit_code, output
 
+    def _get_host_path(self, path: str) -> str:
+        # Clean the container path to get a path relative to the workspace root
+        rel_path = path
+        if rel_path.startswith("/workspace/"):
+            rel_path = rel_path[len("/workspace/"):]
+        elif rel_path.startswith("workspace/"):
+            rel_path = rel_path[len("workspace/"):]
+        elif rel_path.startswith("/"):
+            rel_path = rel_path.lstrip("/")
+        
+        # Resolve to an absolute path on the host to prevent directory traversal
+        host_path = os.path.abspath(os.path.join(self.workspace_host, rel_path))
+        
+        # Ensure the resolved path remains inside the workspace_host directory
+        if not host_path.startswith(self.workspace_host):
+            raise PermissionError("Access denied: Path is outside the sandbox workspace.")
+            
+        return host_path
+
     def read_file(self, path: str) -> str:
         # Since the directory is mounted, we can read directly from the host workspace for performance
-        host_file_path = os.path.join(self.workspace_host, os.path.basename(path))
-        if os.path.exists(host_file_path):
-            with open(host_file_path, "r", encoding="utf-8", errors="replace") as f:
-                return f.read()
+        try:
+            host_file_path = self._get_host_path(path)
+            if os.path.exists(host_file_path):
+                with open(host_file_path, "r", encoding="utf-8", errors="replace") as f:
+                    return f.read()
+        except Exception:
+            pass
         
         # Fallback to reading inside container
         exit_code, output = self.execute(f"cat '{path}'")
@@ -135,7 +157,7 @@ class DockerSandbox(BaseSandbox):
 
     def write_file(self, path: str, content: str) -> None:
         # Write directly to host workspace (since it's mounted)
-        host_file_path = os.path.join(self.workspace_host, os.path.basename(path))
+        host_file_path = self._get_host_path(path)
         os.makedirs(os.path.dirname(host_file_path), exist_ok=True)
         with open(host_file_path, "w", encoding="utf-8") as f:
             f.write(content)

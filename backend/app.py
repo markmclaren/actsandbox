@@ -233,14 +233,14 @@ async def websocket_endpoint(websocket: WebSocket):
                         pass
                 
                 # Instantiate selected Sandbox
-                sandbox_type = cfg.get("sandbox_type", "docker")
+                sandbox_type = cfg.get("sandbox_type") or "docker"
                 await websocket.send_json({"type": "status", "message": f"Spawning isolated {sandbox_type.upper()} Sandbox..."})
                 
                 try:
                     if sandbox_type == "docker":
                         active_sandbox = DockerSandbox(
                             workspace_host_path=WORKSPACE_DIR,
-                            image_name=cfg.get("docker_image", "python:3.11-slim")
+                            image_name=cfg.get("docker_image") or "python:3.11-slim"
                         )
                     elif sandbox_type == "e2b":
                         e2b_key = cfg.get("e2b_api_key")
@@ -255,10 +255,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # Instantiate CodeAct Agent
                 agent = CodeActAgent(
-                    provider=cfg.get("provider", "local"),
-                    model=cfg.get("model", "docker.io/gemma4:latest"),
+                    provider=cfg.get("provider") or "local",
+                    model=cfg.get("model") or "docker.io/gemma4:latest",
                     api_key=cfg.get("api_key", ""),
-                    base_url=cfg.get("base_url", "http://localhost:12434/engines/v1/chat/completions"),
+                    base_url=cfg.get("base_url") or "http://localhost:12434/engines/v1/chat/completions",
                     hitl_enabled=cfg.get("hitl_enabled", True)
                 )
                 
