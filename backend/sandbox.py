@@ -95,7 +95,11 @@ class DockerSandbox(BaseSandbox):
         print(f"[DockerSandbox] Container '{container_name}' is running.")
 
         # Pre-install common tools inside container if needed
-        self.execute("apt-get update && apt-get install -y curl git wget zip unzip --no-install-recommends")
+        self.execute(
+            "if ! command -v curl &>/dev/null || ! command -v git &>/dev/null; then "
+            "apt-get update && apt-get install -y curl git wget zip unzip --no-install-recommends; "
+            "fi"
+        )
 
     def execute(self, command: str) -> Tuple[int, str]:
         if not self.container:

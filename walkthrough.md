@@ -64,4 +64,4 @@ We have optimized and simplified several parts of the application's codebase:
 2. **Robust Thought Cleanup Regex** (Change 4): Enhanced the thought cleaning routine in [backend/agent.py](backend/agent.py) to remove native model tool tags (`<|tool_call|>`) alongside markdown bash code blocks, keeping the timeline UI clean of internal LLM tokens.
 3. **Pruned Dependencies** (Change 5): Removed the unused `google-genai` SDK from [backend/requirements.txt](backend/requirements.txt), reducing environment package bloat and accelerating installation speeds.
 4. **PEP 8 Import Standardizations** (Change 6): Cleaned up the imports in [backend/agent.py](backend/agent.py) by hoisting `httpx` to a top-level import rather than loading it dynamically in methods.
-
+5. **Optimized Container Initialization** (Change 2): Updated the `apt-get` setup script in [backend/sandbox.py](backend/sandbox.py) to check for the presence of required tools (like `curl` and `git`) before running a slow `apt-get update`, saving significant time when reusing images.
