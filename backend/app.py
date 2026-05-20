@@ -1,8 +1,8 @@
 import os
 import json
 import asyncio
-import urllib.request
 import urllib.parse
+import httpx
 from typing import Dict, Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -81,45 +81,44 @@ def update_config(config: ConfigModel):
     return {"status": "success", "message": "Configuration saved."}
 
 
-def fetch_local_models_sync(endpoint_url: str) -> list:
+async def fetch_local_models_async(client: httpx.AsyncClient, endpoint_url: str) -> list:
     try:
-        req = urllib.request.Request(endpoint_url, headers={"User-Agent": "ActSandbox"})
-        with urllib.request.urlopen(req, timeout=1.5) as response:
-            if response.status == 200:
-                data = json.loads(response.read().decode("utf-8"))
-                models = []
-                
-                # OpenAI list shape: {"data": [{"id": "..."}]}
-                if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
-                    for item in data["data"]:
-                        if isinstance(item, dict) and "id" in item:
-                            models.append(item["id"])
-                
-                # Ollama list shape: {"models": [{"name": "..."}]}
-                elif isinstance(data, dict) and "models" in data and isinstance(data["models"], list):
-                    for item in data["models"]:
-                        if isinstance(item, dict) and "name" in item:
+        response = await client.get(endpoint_url, timeout=1.5)
+        if response.status_code == 200:
+            data = response.json()
+            models = []
+            
+            # OpenAI list shape: {"data": [{"id": "..."}]}
+            if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
+                for item in data["data"]:
+                    if isinstance(item, dict) and "id" in item:
+                        models.append(item["id"])
+            
+            # Ollama list shape: {"models": [{"name": "..."}]}
+            elif isinstance(data, dict) and "models" in data and isinstance(data["models"], list):
+                for item in data["models"]:
+                    if isinstance(item, dict) and "name" in item:
+                        models.append(item["name"])
+                    elif isinstance(item, dict) and "model" in item:
+                        models.append(item["model"])
+            
+            # Flat list shape: ["model1", "model2"] or list of dicts with tags (e.g. docker runner format)
+            elif isinstance(data, list):
+                for item in data:
+                    if isinstance(item, str):
+                        models.append(item)
+                    elif isinstance(item, dict):
+                        if "tags" in item and isinstance(item["tags"], list):
+                            for tag in item["tags"]:
+                                if isinstance(tag, str):
+                                    models.append(tag)
+                        elif "id" in item and isinstance(item["id"], str):
+                            if not item["id"].startswith("sha256:"):
+                                models.append(item["id"])
+                        elif "name" in item and isinstance(item["name"], str):
                             models.append(item["name"])
-                        elif isinstance(item, dict) and "model" in item:
-                            models.append(item["model"])
-                
-                # Flat list shape: ["model1", "model2"] or list of dicts with tags (e.g. docker runner format)
-                elif isinstance(data, list):
-                    for item in data:
-                        if isinstance(item, str):
-                            models.append(item)
-                        elif isinstance(item, dict):
-                            if "tags" in item and isinstance(item["tags"], list):
-                                for tag in item["tags"]:
-                                    if isinstance(tag, str):
-                                        models.append(tag)
-                            elif "id" in item and isinstance(item["id"], str):
-                                if not item["id"].startswith("sha256:"):
-                                    models.append(item["id"])
-                            elif "name" in item and isinstance(item["name"], str):
-                                models.append(item["name"])
-                            
-                return models
+                        
+            return models
     except Exception:
         pass
     return []
@@ -136,12 +135,13 @@ async def get_local_models():
         # Probe OpenAI and Ollama typical endpoints
         endpoints = [f"{host_url}/models", f"{host_url}/v1/models", f"{host_url}/api/tags"]
         
-        for ep in endpoints:
-            models = await asyncio.to_thread(fetch_local_models_sync, ep)
-            if models:
-                # Deduplicate and sort
-                unique_models = sorted(list(set(models)))
-                return {"status": "success", "models": unique_models}
+        async with httpx.AsyncClient(headers={"User-Agent": "ActSandbox"}) as client:
+            for ep in endpoints:
+                models = await fetch_local_models_async(client, ep)
+                if models:
+                    # Deduplicate and sort
+                    unique_models = sorted(list(set(models)))
+                    return {"status": "success", "models": unique_models}
                 
         return {"status": "empty", "models": []}
     except Exception as e:

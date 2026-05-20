@@ -1,5 +1,6 @@
 import re
 import asyncio
+import httpx
 from typing import AsyncGenerator, Dict, Any, List
 from openai import AsyncOpenAI
 from backend.sandbox import BaseSandbox
@@ -43,7 +44,6 @@ class CodeActAgent:
         else:
             raise ValueError(f"Unknown LLM provider: {provider}")
 
-        import httpx
         print(f"[Agent] Initializing OpenAI Client for provider={provider}, base_url={client_kwargs.get('base_url', 'default')}")
         self.client = AsyncOpenAI(http_client=httpx.AsyncClient(trust_env=False), **client_kwargs)
 
@@ -196,8 +196,9 @@ class CodeActAgent:
             command = self._extract_bash_command(response_text)
             
             # Send current thoughts/explanations to client
-            # Strip bash block for thought rendering in timeline
-            clean_thought = re.sub(r"```bash\s*\n.*?\n\s*```", "[Terminal Action Executing]", response_text, flags=re.DOTALL).strip()
+            # Strip bash block and native tool calls for thought rendering in timeline
+            clean_thought = re.sub(r"```bash\s*\n.*?\n\s*```", "[Terminal Action Executing]", response_text, flags=re.DOTALL)
+            clean_thought = re.sub(r"<\|tool_call\|?>.*?(?:<\||$)", "[Terminal Action Executing]", clean_thought, flags=re.DOTALL).strip()
             
             yield {
                 "type": "thought",
