@@ -50,8 +50,8 @@ graph TD
 
 ActSandbox is built specifically to thrive on local hardware. We recommend **Qwen2.5-Coder (7B or 9B)** or **Gemma-4 (9B)** for the best local reasoning experience.
 
-### Option 1: Using Docker Desktop's Model Runner (Built-in & Easiest)
-If you have **Docker Desktop (v4.34+)**, you can pull and serve models directly from your command line using the native `docker model` CLI. Since Docker Desktop is already a requirement to run ActSandbox, this is the easiest method and completely removes the need to install separate tools like Ollama!
+### Using Docker Desktop's Model Runner
+If you have **Docker Desktop (v4.34+)**, you can pull and serve models directly from your command line using the native `docker model` CLI. Since Docker Desktop is already a requirement to run ActSandbox, this is the easiest method and completely removes the need to install separate tools!
 
 > [!IMPORTANT]
 > **Prerequisite**: You must have **Docker AI** turned on and check **Enable Docker Model Runner** in your Docker Desktop settings. For complete details, see the official [Docker Model Runner Documentation](https://docs.docker.com/ai/model-runner/).
@@ -71,27 +71,8 @@ Docker Desktop automatically hosts an OpenAI-compatible API endpoint directly on
 * **Endpoint API URL**: Use **`http://localhost:12434/engines/v1`** (which is what your Docker Model Runner natively exposes).
 * Simply configure this URL in the **Left Control Panel** of ActSandbox, enter the model name (`ai/gemma4`), and you are ready to run!
 
-### Option 2: Running Models via Ollama (Stand-alone)
-Download and install [Ollama](https://ollama.com/), then pull your model of choice:
-```bash
-# Pull and start the recommended local model
-ollama run qwen2.5-coder:7b
+> **Alternative Providers**: If you prefer, you can also use other local model servers (like Ollama or vLLM) by simply pointing the **Endpoint API URL** in ActSandbox to their respective OpenAI-compatible endpoints.
 
-# Alternative high-quality reasoning model
-ollama run gemma4:9b
-```
-
-> **Note (Alternative - Running Ollama in a Container):** If you prefer running Ollama as a standard Docker container instead of a host install, you can start the container and pull models inside it:
-> ```bash
-> # Start Ollama container (macOS/Linux CPU/Silicon)
-> docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
-> 
-> # Start Ollama container (Windows/Linux Nvidia GPU support)
-> docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
-> 
-> # Download Qwen2.5-Coder inside container
-> docker exec -it ollama ollama run qwen2.5-coder:7b
-> ```
 
 ---
 
@@ -141,9 +122,9 @@ Double-click `stop.bat` or run in PowerShell:
 ## 🛠️ Configuration Console
 
 Once the web interface opens, you can customize execution parameters on the **Left Control Panel**:
-* **LLM Provider**: Choose `Local Docker LLM (Ollama)`, `Gemini API`, or `OpenAI API`.
-* **Endpoint API URL**: Specify your LLM server's address (e.g., `http://localhost:12434/engines/v1` for **Docker Desktop Model Runner**, or `http://localhost:11434/v1` for **standalone Ollama**).
-* **Model Tag**: Specify the exact model tag (e.g. `qwen2.5-coder:7b` or `gemma4:latest`).
+* **LLM Provider**: Choose `Local Docker LLM`, `Gemini API`, or `OpenAI API`.
+* **Endpoint API URL**: Specify your LLM server's address (e.g., `http://localhost:12434/engines/v1` for **Docker Desktop Model Runner**).
+* **Model Tag**: Specify the exact model tag (e.g. `ai/gemma4` or `qwen2.5-coder:7b`).
 * **Sandbox Engine**: Toggle between local `Docker Container` or cloud `E2B Sandbox`.
 * **Require Command Approval (HITL)**: Toggle command approval on or off.
 
